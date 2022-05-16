@@ -1,0 +1,12 @@
+from dataclasses import dataclass
+
+
+@dataclass
+class Categorical:
+
+    log_ps: np.ndarray
+
+    def logpmf(self, x):
+        return self.log_ps[x]
+
+    
