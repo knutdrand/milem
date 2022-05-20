@@ -71,11 +71,13 @@ class SparseEM:
         tot_logpmf = logsumexp(logpmfs, axis=0)
         return [logpmf-tot_logpmf for logpmf in logpmfs], np.mean(tot_logpmf)
 
-    def adjust_distribution_parameters(self, X, responsibilities):
+    def adjust_distribution_parameters(self, X, responsibilities, n_pos=None):
         for dist, dist_responsibilities in zip(self.dists, responsibilities):
             dist.fit(X, np.exp(dist_responsibilities))
 
-        self.log_weights = [logsumexp(dist_responsibilities)-np.log(len(X))
+        if n_pos is None:
+            n_pos = len(X)
+        self.log_weights = [logsumexp(dist_responsibilities[:n_pos])-np.log(n_pos)
                             for dist_responsibilities in responsibilities]
         assert np.allclose(logsumexp(self.log_weights), 0), (self.log_weights, responsibilities)
 
@@ -106,7 +108,7 @@ class SparseMIL(SparseEM):
             resp, logpmf = self.calculate_responsibilities(pos_X)
             for r, nr in zip(responsibilities, resp):
                 r[:len(pos_X)] = nr
-            self.adjust_distribution_parameters(X, responsibilities)
+            self.adjust_distribution_parameters(X, responsibilities, n_pos=len(pos_X))
             print(i, logpmf, np.exp(self.log_weights))
             if logpmf-cur_logpmf < logpmf_diff_threshold:
                 break
